@@ -1,11 +1,21 @@
 {
-  "name": "glitch",
+  "name": "digitalism",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@tensorflow/tfjs": "^0.14.1",
+    "bulma": "^0.7.2",
+    "node-sass": "^4.11.0",
+    "rc-slider": "^8.6.4",
     "react": "^16.7.0",
+    "react-document-meta": "^3.0.0-beta.2",
     "react-dom": "^16.7.0",
-    "react-scripts": "2.1.1"
+    "react-icons": "^3.2.2",
+    "react-image-crop": "^6.0.9",
+    "react-loading-screen": "0.0.17",
+    "react-router-dom": "^4.3.1",
+    "react-scripts": "2.1.1",
+    "react-toasts": "^2.0.14"
   },
   "scripts": {
     "start": "react-scripts start",
