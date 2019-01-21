@@ -7,35 +7,28 @@ import {
 } from 'react-router-dom';
 import Home from './routes/Home';
 import Style from './routes/Style';
-import DocumentMeta from 'react-document-meta';
+import { Helmet } from "react-helmet";
 
 class App extends Component {
   render() {
-    const meta = {
-      title: 'Digitalism',
-      description: 'Turn your pictures into art',
-      canonical: 'https://digitalism.com.br',
-      meta: {
-        charset: 'utf-8',
-        name: {
-          keywords: 'react,meta,art,machinelearning,machine learning'
-        }
-      }
-    };
-
     return (
-      <DocumentMeta {...meta}>
-        <div>
-          <Router>
-              <div className="App">
-                <Switch>
-                  <Route exact path="/" component={ Home } />
-                  <Route exact path="/style" component={ Style } />
-                </Switch>
-              </div>
-            </Router>
-        </div>
-      </DocumentMeta>
+      <div>
+        <Helmet>
+          <meta charSet="utf-8" />
+          <title>Digitalism</title>
+          <meta name="keywords" content="react,meta,art,machinelearning,machine-learning" />
+          <meta name="description" content="Turn your pictures into art" />
+        </Helmet>
+
+        <Router>
+            <div className="App">
+              <Switch>
+                <Route exact path="/" component={ Home } />
+                <Route exact path="/style" component={ Style } />
+              </Switch>
+            </div>
+          </Router>
+      </div>
     );
   }
 }

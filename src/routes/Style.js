@@ -7,6 +7,7 @@ import 'rc-slider/assets/index.css';
 import Header from '../components/Header';
 import LoadingScreen from 'react-loading-screen';
 import { ToastContainer, ToastStore } from 'react-toasts';
+import { isMobile } from 'react-device-detect';
 
 class Style extends Component {
     state = {
@@ -37,6 +38,7 @@ class Style extends Component {
     previousStep = (e) => {
         e.preventDefault();
         this.setState({
+            imageGenerated: false,
             step: this.state.step - 1
         });
     }
@@ -57,15 +59,28 @@ class Style extends Component {
         }
     }
 
-    async componentDidMount() {
+    componentDidMount() {
+        let transformerFolder = null;
+        let modelFolder = null;
+
+        if(isMobile) {
+            transformerFolder = "/transformer_mobile/";
+            modelFolder = "/model_mobile/";
+        }else {
+            transformerFolder = "/transformer_separable/";
+            modelFolder = "/inception/";
+        }
+
+        console.log(isMobile);
+
         Promise.all([
-          tf.loadFrozenModel(
-            'frozen_model/transformer_separable/tensorflowjs_model.pb',
-            'frozen_model/transformer_separable/weights_manifest.json'
-          ),
-          tf.loadFrozenModel(
-            'frozen_model/inception/tensorflowjs_model.pb', 
-            'frozen_model/inception/weights_manifest.json')
+            tf.loadFrozenModel(
+                process.env.PUBLIC_URL + transformerFolder + 'tensorflowjs_model.pb',
+                process.env.PUBLIC_URL + transformerFolder + 'weights_manifest.json'
+            ),
+            tf.loadFrozenModel(
+                process.env.PUBLIC_URL + modelFolder + 'tensorflowjs_model.pb', 
+                process.env.PUBLIC_URL + modelFolder + 'weights_manifest.json')
         ]).then(([transSeparable, inception]) => {
             console.log("Models loaded");
             this.setState({
@@ -99,27 +114,28 @@ class Style extends Component {
             const contentImg = await this.loadImage(this.state.imagePreviewUrl);
             const styleImg = this.state.selectedStyle;
             const stylized = document.getElementById('stylized');
+            stylized.style.display = 'block';
             
             const styleRatio = this.state.ratioStrength / 100;
         
             //await tf.nextFrame();
             //await tf.nextFrame();
             let bottleneck = await tf.tidy(() => {
-            return this.state.inception.predict(tf.fromPixels(styleImg).toFloat().div(tf.scalar(255)).expandDims());
+                return this.state.inception.predict(tf.fromPixels(styleImg).toFloat().div(tf.scalar(255)).expandDims());
             })
             if (styleRatio !== 1.0) {
-            await tf.nextFrame();
-            const identityBottleneck = await tf.tidy(() => {
-                return this.state.inception.predict(tf.fromPixels(contentImg).toFloat().div(tf.scalar(255)).expandDims());
-            })
-            const styleBottleneck = bottleneck;
-            bottleneck = await tf.tidy(() => {
-                const styleBottleneckScaled = styleBottleneck.mul(tf.scalar(styleRatio));
-                const identityBottleneckScaled = identityBottleneck.mul(tf.scalar(1.0-styleRatio));
-                return styleBottleneckScaled.addStrict(identityBottleneckScaled)
-            })
-            styleBottleneck.dispose();
-            identityBottleneck.dispose();
+                await tf.nextFrame();
+                const identityBottleneck = await tf.tidy(() => {
+                    return this.state.inception.predict(tf.fromPixels(contentImg).toFloat().div(tf.scalar(255)).expandDims());
+                })
+                const styleBottleneck = bottleneck;
+                bottleneck = await tf.tidy(() => {
+                    const styleBottleneckScaled = styleBottleneck.mul(tf.scalar(styleRatio));
+                    const identityBottleneckScaled = identityBottleneck.mul(tf.scalar(1.0-styleRatio));
+                    return styleBottleneckScaled.addStrict(identityBottleneckScaled)
+                })
+                styleBottleneck.dispose();
+                identityBottleneck.dispose();
             }
 
             this.setState({
@@ -128,7 +144,7 @@ class Style extends Component {
         
             await tf.nextFrame();
             const styl = await tf.tidy(() => {
-            return this.state.transSeparable.predict([tf.fromPixels(contentImg).toFloat().div(tf.scalar(255)).expandDims(), bottleneck]).squeeze();
+                return this.state.transSeparable.predict([tf.fromPixels(contentImg).toFloat().div(tf.scalar(255)).expandDims(), bottleneck]).squeeze();
             })
             await tf.toPixels(styl, stylized);
             bottleneck.dispose();
@@ -153,7 +169,6 @@ class Style extends Component {
 
     saveImage = (e) => {
         e.preventDefault();
-        console.log("Chamou");
         const canvas = document.getElementById("stylized");
         var lnk = document.createElement('a'), e;
         lnk.download = "art.png";
@@ -186,78 +201,97 @@ class Style extends Component {
 
                     <div className="hero-body">
                         <div className="container">
-                            <div className="card">
-                                <div className="card-content">
-                                    {this.state.step == 1 &&
-                                        <ImageUpload parent={this.getUploadedImage}></ImageUpload>
-                                    }
+                            {this.state.step == 1 &&
+                                <ImageUpload parent={this.getUploadedImage}></ImageUpload>
+                            }
 
-                                    {this.state.step == 2 &&
-                                        <SelectStyle parent={this.getStyle}></SelectStyle>
-                                    }
+                            {this.state.step == 2 &&
+                                <SelectStyle parent={this.getStyle}></SelectStyle>
+                            }
 
-                                    {this.state.step == 3 &&
+                            {this.state.step == 3 &&
+                                <div>
+                                    {this.state.imageGenerated &&
+                                        <h1 className="title is-4 has-text-centered">
+                                            Here is the final result! :)
+                                        </h1>
+                                    }
+                                    <div className="columns is-centered" style={{marginBottom: '1em'}}>
+                                        <div className="column is-6">
+                                            <canvas id="stylized" style={{width: '100%', display: 'none'}}></canvas>
+                                        </div>
+                                    </div>
+
+                                    {!this.state.imageGenerated &&
                                         <div>
-                                            <div className="has-text-centered" style={{marginBottom: '1em'}}>
-                                                <canvas id="stylized"></canvas>
-                                            </div>
-
-                                            <div className="columns is-vcentered is-centered">
-                                                <div className="column is-4">
-                                                    <img src={this.state.imagePreviewUrl} />
-                                                </div>
-
-                                                <div className="column is-1">
-                                                    <p style={{fontSize: '5em'}}>+</p>
-                                                </div>
-
-                                                <div className="column is-4">
-                                                    <img src={this.state.selectedStyle.src} />
-                                                </div>
-                                            </div>
-
-                                            <div className="columns">
+                                            <div className="columns" style={{marginBottom: '1em'}}>
                                                 <div className="column is-12">
                                                     <p>Stylization strength</p>
                                                     <Slider min={30} max={100} defaultValue={80} step={null} onChange={this.onRatioChange}
                                                         marks={{ 30: '30%', 40: '40%', 50: '50%', 60: '60%', 70: '70%', 80: '80%', 90: '90%', 100: '100%' }}  />
                                                 </div>
                                             </div>
+
+                                            <div className="columns is-mobile is-vcentered is-centered">
+                                                <div className="column is-4">
+                                                    <img src={this.state.imagePreviewUrl} />
+                                                </div>
+
+                                                <div className="column is-1">
+                                                    <p>+</p>
+                                                </div>
+
+                                                <div className="column is-4">
+                                                    <img src={this.state.selectedStyle.src} />
+                                                </div>
+                                            </div>
                                         </div>
                                     }
-
-                                    <div className="has-text-centered" style={{marginTop: '3em'}}>
-                                        {this.state.step > 1 &&
-                                            <button className="button is-default" onClick={this.previousStep} style={{marginRight: '1em'}}>
-                                                Back
-                                            </button>
-                                        }
-
-                                        {this.state.step < 3 &&
-                                            <button type="button" className="button is-primary" onClick={this.nextStep} disabled={this.checkDisabled()}>
-                                                Next
-                                            </button>
-                                        }
-
-                                        {this.state.step == 3 &&
-                                            <button className="button is-info" onClick={this.styleImage} disabled={this.state.inception == null}>
-                                                {this.state.inception == null &&
-                                                    <span>Loading models..</span>
-                                                }
-
-                                                {this.state.inception != null &&
-                                                    <span>Style!</span>
-                                                }
-                                            </button>
-                                        }
-
-                                        {this.state.imageGenerated == true &&
-                                            <button className="button is-success" onClick={this.saveImage} style={{marginLeft: '1em'}}>
-                                                Save
-                                            </button>
-                                        }
-                                    </div>
                                 </div>
+                            }
+
+                            <div className="has-text-centered" style={{marginTop: '3em'}}>
+                                {this.state.step > 1 &&
+                                    <button className="button is-large is-default is-rounded floating-button-left" 
+                                        onClick={this.previousStep}>
+                                        <span className="icon">
+                                            &#8617;
+                                        </span>
+                                        <span>
+                                            Back
+                                        </span>
+                                    </button>
+                                }
+
+                                {this.state.step < 3 &&
+                                    <button type="button" className="button is-large is-info is-rounded floating-button-right" 
+                                        onClick={this.nextStep} disabled={this.checkDisabled()}>
+                                        <span>Next</span>
+                                        <span className="icon">
+                                            &#8618;
+                                        </span>
+                                    </button>
+                                }
+
+                                {this.state.step == 3 &&
+                                    <button className="button is-large is-success is-rounded floating-button-right" 
+                                        onClick={this.styleImage} disabled={this.state.inception == null}>
+                                        {this.state.inception == null &&
+                                            <span>Loading models..</span>
+                                        }
+
+                                        {this.state.inception != null && !this.state.imageGenerated &&
+                                            <span>Style!</span>
+                                        }
+                                    </button>
+                                }
+
+                                {this.state.imageGenerated == true &&
+                                    <button className="button is-large is-danger is-rounded floating-button-right" 
+                                        onClick={this.saveImage} style={{marginLeft: '1em'}}>
+                                        Save
+                                    </button>
+                                }
                             </div>
                         </div>
                     </div>

@@ -41,7 +41,7 @@ class Home extends Component {
                             <div className="tabs is-centered">
                                 <ul>
                                     <li>
-                                        <span className="copyleft">&copy;</span> Copyleft 2018
+                                        <span className="copyleft">&copy;</span> Copyleft 2019
                                     </li>
                                 </ul>
                             </div>

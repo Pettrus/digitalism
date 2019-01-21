@@ -107,10 +107,17 @@ class ImageUpload extends Component {
         return (
             <div className="has-text-centered">
                 <div>
-                    <input type="file" onChange={this.handleUpload} accept="image/*" />
+                    <h1 className="title is-4">
+                        Start by selecting a nice picture ;)
+                    </h1>
+
+                    <div>
+                        <input id="file" type="file" onChange={this.handleUpload} accept="image/*" className="inputfile" />
+                        <label htmlFor="file">Choose a file</label>
+                    </div>
                 </div>
 
-                <div>
+                <div style={{marginTop: '1em'}}>
                     {this.state.imagePreviewUrl != null &&
                         <div>
                             <ReactCrop 
