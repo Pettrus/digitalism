@@ -1,6 +1,10 @@
 import React, { Component } from 'react';
 import Header from '../components/Header';
 import { Link } from 'react-router-dom';
+import ReactGA from 'react-ga';
+
+ReactGA.initialize(process.env.REACT_APP_GA);
+ReactGA.pageview(window.location.pathname + window.location.search);
 
 class Home extends Component {
     render() {

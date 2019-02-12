@@ -10,6 +10,7 @@
     "react": "^16.7.0",
     "react-device-detect": "^1.6.2",
     "react-dom": "^16.7.0",
+    "react-ga": "^2.5.7",
     "react-helmet": "^5.2.0",
     "react-icons": "^3.2.2",
     "react-image-crop": "^6.0.9",
@@ -32,5 +33,6 @@
     "not dead",
     "not ie <= 11",
     "not op_mini all"
-  ]
+  ],
+  "devDependencies": {}
 }

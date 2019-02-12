@@ -7,7 +7,12 @@ import 'rc-slider/assets/index.css';
 import Header from '../components/Header';
 import LoadingScreen from 'react-loading-screen';
 import { ToastContainer, ToastStore } from 'react-toasts';
-import { isMobile } from 'react-device-detect';
+
+import ReactGA from 'react-ga';
+
+ReactGA.initialize(process.env.REACT_APP_GA);
+
+ReactGA.pageview(window.location.pathname + window.location.search);
 
 class Style extends Component {
     state = {
@@ -16,7 +21,7 @@ class Style extends Component {
         selectedStyle: null,
         inception: null,
         transSeparable: null,
-        ratioStrength: 80,
+        ratioStrength: 100,
         loading: false,
         loadingMessage: null,
         imageGenerated: false
@@ -60,27 +65,16 @@ class Style extends Component {
     }
 
     componentDidMount() {
-        let transformerFolder = null;
-        let modelFolder = null;
-
-        if(isMobile) {
-            transformerFolder = "/transformer_mobile/";
-            modelFolder = "/model_mobile/";
-        }else {
-            transformerFolder = "/transformer_separable/";
-            modelFolder = "/inception/";
-        }
-
-        console.log(isMobile);
+        tf.setBackend('cpu');
 
         Promise.all([
             tf.loadFrozenModel(
-                process.env.PUBLIC_URL + transformerFolder + 'tensorflowjs_model.pb',
-                process.env.PUBLIC_URL + transformerFolder + 'weights_manifest.json'
+                process.env.PUBLIC_URL + '/transformer_mobile/tensorflowjs_model.pb',
+                process.env.PUBLIC_URL + '/transformer_mobile/weights_manifest.json'
             ),
             tf.loadFrozenModel(
-                process.env.PUBLIC_URL + modelFolder + 'tensorflowjs_model.pb', 
-                process.env.PUBLIC_URL + modelFolder + 'weights_manifest.json')
+                process.env.PUBLIC_URL + '/model_mobile/tensorflowjs_model.pb', 
+                process.env.PUBLIC_URL + '/model_mobile/weights_manifest.json')
         ]).then(([transSeparable, inception]) => {
             console.log("Models loaded");
             this.setState({
@@ -108,7 +102,7 @@ class Style extends Component {
         try {
             this.setState({
                 loading: true,
-                loadingMessage: "Calculating Llama Expectoration Trajectory"
+                loadingMessage: "This may take a while..."
             });
 
             const contentImg = await this.loadImage(this.state.imagePreviewUrl);
@@ -117,9 +111,7 @@ class Style extends Component {
             stylized.style.display = 'block';
             
             const styleRatio = this.state.ratioStrength / 100;
-        
-            //await tf.nextFrame();
-            //await tf.nextFrame();
+            
             let bottleneck = await tf.tidy(() => {
                 return this.state.inception.predict(tf.fromPixels(styleImg).toFloat().div(tf.scalar(255)).expandDims());
             })
@@ -139,7 +131,7 @@ class Style extends Component {
             }
 
             this.setState({
-                loadingMessage: "Diluting Livestock Nutrition Variables"
+                loadingMessage: "Everthing is running on your browser"
             });
         
             await tf.nextFrame();
@@ -227,7 +219,7 @@ class Style extends Component {
                                             <div className="columns" style={{marginBottom: '1em'}}>
                                                 <div className="column is-12">
                                                     <p>Stylization strength</p>
-                                                    <Slider min={30} max={100} defaultValue={80} step={null} onChange={this.onRatioChange}
+                                                    <Slider min={30} max={100} defaultValue={100} step={null} onChange={this.onRatioChange}
                                                         marks={{ 30: '30%', 40: '40%', 50: '50%', 60: '60%', 70: '70%', 80: '80%', 90: '90%', 100: '100%' }}  />
                                                 </div>
                                             </div>
